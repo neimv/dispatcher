@@ -1,22 +1,8 @@
 
 import click
-from flask import Flask
-from flask_restful import Resource, Api
 
-
-#############################################################################
-# App flask
-#############################################################################
-app = Flask(__name__)
-api = Api(app)
-
-
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
-
-
-api.add_resource(HelloWorld, '/')
+from app import app
+from etl import ETL
 
 
 #############################################################################
@@ -31,6 +17,12 @@ def cli():
 def run_app():
     print("running app")
     app.run("0.0.0.0", debug=True)
+
+
+@cli.command()
+def create_tables():
+    etl = ETL()
+    etl.main()
 
 
 if __name__ == '__main__':
