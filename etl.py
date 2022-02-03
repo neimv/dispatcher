@@ -12,9 +12,9 @@ class ETL:
         self.folder_name = 'datasets'
         # Check if use .env file to this variables
         self.user = 'neimv'
-        self.password = 'V:67012:h'
+        self.password = 'prueba_neimv'
         self.host = 'localhost'
-        self.db = 'pyllytics'
+        self.db = 'neimv'
 
     def main(self):
         self._extract()
@@ -35,21 +35,29 @@ class ETL:
         return df
 
     def _load(self):
-        self.samples_file = random.sample(self.filenames, 30)
-        engine = create_engine(
+        self.samples_file = self.filenames  # random.sample(self.filenames, 30)
+        engine_pg = create_engine(
             f'postgresql+psycopg2://'
             f'{self.user}:{self.password}@{self.host}/{self.db}'
         )
+        engine_my = create_engine(
+            f'mysql+pymysql://'
+            f'{self.user}:{self.password}@{self.host}/{self.db}'
+        )
+        engine_maria = create_engine(
+            f'mysql+pymysql://'
+            f'{self.user}:{self.password}@{self.host}:3307/{self.db}'
+        )
         # Check if exists the dataframes
-        try:
-            pd.read_sql_table('all_dataframes', engine)
-            print("The tables exists writte the news? [y/n]")
-            write = input(">>> ")
+        # try:
+        #     pd.read_sql_table('all_dataframes', engine)
+        #     print("The tables exists writte the news? [y/n]")
+        #     write = input(">>> ")
 
-            if write != 'y':
-                sys.exit()
-        except:
-            pass
+        #     if write != 'y':
+        #         sys.exit()
+        # except:
+        #     pass
 
         for file_name in self.samples_file:
             try:
@@ -61,18 +69,31 @@ class ETL:
                 continue
 
             df = self._transform(df)
-            print(df.head())
+            print(file_name)
 
-            df.to_sql(
-                f'dataframe_{file_name.lower()}',
-                engine,
-                if_exists='replace'
-            )
+            try:
+                df.to_sql(
+                    f'dataframe_{file_name.lower()}',
+                    engine_pg,
+                    if_exists='replace'
+                )
+                df.to_sql(
+                    f'dataframe_{file_name.lower()}',
+                    engine_my,
+                    if_exists='replace'
+                )
+                df.to_sql(
+                    f'dataframe_{file_name.lower()}',
+                    engine_maria,
+                    if_exists='replace'
+                )
+            except Exception as e:
+                print(e)
 
         df_saving = pd.DataFrame(
             self.samples_file, columns=['dataframe_registers']
         )
-        df_saving.to_sql('all_dataframes', engine)
+        df_saving.to_sql('all_dataframes', engine_pg)
 
 
 if __name__ == '__main__':

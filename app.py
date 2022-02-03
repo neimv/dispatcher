@@ -20,9 +20,9 @@ parser.add_argument('format')
 
 # @TODO, change this to good configs
 user = 'neimv'
-password = 'V:67012:h'
+password = 'prueba_neimv'
 host = 'localhost'
-db = 'pyllytics'
+db = 'neimv'
 engine = create_engine(
     f'postgresql+psycopg2://'
     f'{user}:{password}@{host}/{db}'
