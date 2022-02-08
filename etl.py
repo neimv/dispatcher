@@ -15,6 +15,7 @@ class ETL:
         self.password = 'prueba_neimv'
         self.host = 'localhost'
         self.db = 'neimv'
+        self.output_folder = "/var/dispatcher"
 
     def main(self):
         self._extract()
@@ -35,7 +36,7 @@ class ETL:
         return df
 
     def _load(self):
-        self.samples_file = self.filenames  # random.sample(self.filenames, 30)
+        self.samples_file = self.filenames
         engine_pg = create_engine(
             f'postgresql+psycopg2://'
             f'{self.user}:{self.password}@{self.host}/{self.db}'
@@ -48,16 +49,6 @@ class ETL:
             f'mysql+pymysql://'
             f'{self.user}:{self.password}@{self.host}:3307/{self.db}'
         )
-        # Check if exists the dataframes
-        # try:
-        #     pd.read_sql_table('all_dataframes', engine)
-        #     print("The tables exists writte the news? [y/n]")
-        #     write = input(">>> ")
-
-        #     if write != 'y':
-        #         sys.exit()
-        # except:
-        #     pass
 
         for file_name in self.samples_file:
             try:
@@ -65,13 +56,18 @@ class ETL:
                     f'{self.folder_name}/{file_name}',
                     compression='gzip'
                 )
-            except:
+            except Exception:
                 continue
 
             df = self._transform(df)
+            file_name = file_name.replace('.csv.tar.gz', '')
             print(file_name)
 
+            if file_name == '1M':
+                continue
+
             try:
+                # Saving data
                 df.to_sql(
                     f'dataframe_{file_name.lower()}',
                     engine_pg,
@@ -86,6 +82,22 @@ class ETL:
                     f'dataframe_{file_name.lower()}',
                     engine_maria,
                     if_exists='replace'
+                )
+                df.to_csv(
+                    f'{self.output_folder}/csv/{file_name}.csv',
+                    index=False
+                )
+                df.to_excel(
+                    f'{self.output_folder}/excel/{file_name}.xlsx',
+                    index=False
+                )
+                df.to_parquet(
+                    f'{self.output_folder}/parquet/{file_name}.parquet',
+                    index=False
+                )
+                df.to_json(
+                    f'{self.output_folder}/json/{file_name}.json',
+                    orient='records'
                 )
             except Exception as e:
                 print(e)
